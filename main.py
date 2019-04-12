@@ -4,6 +4,101 @@ PYthon A* implementation
 Antonio Gomes and Eduardo Binotto
 """
 
+import copy
+
+
+class Node:
+
+    def __init__(self, state):
+
+        self.state = state
+        self.sons = []
+
+    def __str__(self):
+        str_repr = '-----\n'
+        for line in self.state:
+            for column in line:
+                str_repr += (str(column) + ' ')
+            str_repr += '\n'
+        str_repr += '-----\n'
+        return str_repr
+
+    def get_node_sons(self):
+        current_node = self.state
+
+        for line_number, line in enumerate(current_node):
+            for column_number, number in enumerate(line):
+
+                # If is the square
+                if number == 0:
+
+                    print(f'0 at line {line_number} and column {column_number}')
+
+                    # Square can go up
+                    if line_number > 0:
+                        new_son = copy.deepcopy(current_node)
+
+                        # Get the number of the up position
+                        flip_number = current_node[line_number - 1][column_number]
+
+                        # Set the number of the up position to 0
+                        new_son[line_number - 1][column_number] = 0
+
+                        # Set the current 0 position to the flip number
+                        new_son[line_number][column_number] = flip_number
+
+                        self.sons.append(Node(new_son))
+
+                    # Square can go down
+                    if line_number < 2:
+                        new_son = copy.deepcopy(current_node)
+
+                        # Get the number of the down position
+                        flip_number = current_node[line_number + 1][column_number]
+
+                        # Set the number of the down position to 0
+                        new_son[line_number + 1][column_number] = 0
+
+                        # Set the current 0 position to the flip number
+                        new_son[line_number][column_number] = flip_number
+
+                        self.sons.append(Node(new_son))
+
+                    # Square can go right
+                    if column_number < 2:
+                        new_son = copy.deepcopy(current_node)
+
+                        # Get the number of the right position
+                        flip_number = current_node[line_number][column_number + 1]
+
+                        # Set the number of the right position to 0
+                        new_son[line_number][column_number + 1] = 0
+
+                        # Set the current 0 position to the flip number
+                        new_son[line_number][column_number] = flip_number
+
+                        self.sons.append(Node(new_son))
+
+                    # Square can go left
+                    if column_number > 0:
+                        new_son = copy.deepcopy(current_node)
+
+                        # Get the number of the left position
+                        flip_number = current_node[line_number][column_number - 1]
+
+                        # Set the number of the left position to 0
+                        new_son[line_number][column_number - 1] = 0
+
+                        # Set the current 0 position to the flip number
+                        new_son[line_number][column_number] = flip_number
+
+                        self.sons.append(Node(new_son))
+
+    def print_sons(self):
+        for sun_number, son in enumerate(self.sons):
+            print(f'Son #{sun_number}')
+            print(son)
+
 
 def reconstruct_path(came_from, current):
 
@@ -38,82 +133,6 @@ initial_state = [
     [8, 0, 7],
     [1, 4, 6]
 ]
-
-
-def get_node_sons(current_node):
-    sons = []
-
-    for line_number, line in enumerate(current_node):
-        for column_number, number in enumerate(line):
-
-            # If is the square
-            if number == 0:
-
-                # Square can go up
-                if line_number > 0:
-
-                    new_son = current_node
-
-                    # Get the number of the up position
-                    flip_number = current_node[line_number-1][column_number]
-
-                    # Set the number of the up position to 0
-                    new_son[line_number-1][column_number] = 0
-
-                    # Set the current 0 position to the flip number
-                    new_son[line_number][column_number] = flip_number
-
-                    sons.append(new_son)
-
-                # Square can go down
-                if line_number < 2:
-
-                    new_son = current_node
-
-                    # Get the number of the down position
-                    flip_number = current_node[line_number+1][column_number]
-
-                    # Set the number of the down position to 0
-                    new_son[line_number+1][column_number] = 0
-
-                    # Set the current 0 position to the flip number
-                    new_son[line_number][column_number] = flip_number
-
-                    sons.append(new_son)
-
-                # Square can go right
-                if column_number < 2:
-
-                    new_son = current_node
-
-                    # Get the number of the right position
-                    flip_number = current_node[line_number][column_number+1]
-
-                    # Set the number of the right position to 0
-                    new_son[line_number][column_number+1] = 0
-
-                    # Set the current 0 position to the flip number
-                    new_son[line_number][column_number] = flip_number
-
-                    sons.append(new_son)
-
-                # Square can go left
-                if column_number > 0:
-
-                    new_son = current_node
-
-                    # Get the number of the left position
-                    flip_number = current_node[line_number][column_number-1]
-
-                    # Set the number of the left position to 0
-                    new_son[line_number][column_number-1] = 0
-
-                    # Set the current 0 position to the flip number
-                    new_son[line_number][column_number] = flip_number
-
-                    sons.append(new_son)
-
-    return sons
 
 
 def a_star():
