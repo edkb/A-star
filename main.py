@@ -9,9 +9,10 @@ import copy
 
 class Node:
 
-    def __init__(self, state):
+    def __init__(self, state, cost=0):
 
         self.state = state
+        self.cost = cost
         self.sons = []
 
     def __str__(self):
@@ -23,9 +24,6 @@ class Node:
         str_repr += '-----\n'
         return str_repr
 
-    def __ne__(self, other):
-        return self.state != other.state
-
     def get_node_sons(self):
         current_node = self.state
 
@@ -34,8 +32,6 @@ class Node:
 
                 # If is the square
                 if number == 0:
-
-                    print(f'0 at line {line_number} and column {column_number}')
 
                     # Square can go up
                     if line_number > 0:
@@ -50,7 +46,7 @@ class Node:
                         # Set the current 0 position to the flip number
                         new_son[line_number][column_number] = flip_number
 
-                        self.sons.append(Node(new_son))
+                        self.sons.append(Node(new_son, self.cost+1))
 
                     # Square can go down
                     if line_number < 2:
@@ -65,7 +61,7 @@ class Node:
                         # Set the current 0 position to the flip number
                         new_son[line_number][column_number] = flip_number
 
-                        self.sons.append(Node(new_son))
+                        self.sons.append(Node(new_son, self.cost+1))
 
                     # Square can go right
                     if column_number < 2:
@@ -80,7 +76,7 @@ class Node:
                         # Set the current 0 position to the flip number
                         new_son[line_number][column_number] = flip_number
 
-                        self.sons.append(Node(new_son))
+                        self.sons.append(Node(new_son, self.cost+1))
 
                     # Square can go left
                     if column_number > 0:
@@ -95,7 +91,7 @@ class Node:
                         # Set the current 0 position to the flip number
                         new_son[line_number][column_number] = flip_number
 
-                        self.sons.append(Node(new_son))
+                        self.sons.append(Node(new_son, self.cost+1))
 
     def print_sons(self):
         for sun_number, son in enumerate(self.sons):
@@ -127,20 +123,18 @@ final_state = [
    #  Column
    # 0  1  2
     [1, 2, 3],  # Line 0
-    [6, 5, 4],  # Line 1
+    [4, 5, 6],  # Line 1
     [7, 8, 0]   # Line 2
 ]
 
 initial_state = [
-    [2, 3, 5],
-    [8, 0, 7],
-    [1, 4, 6]
+    [1, 2, 3],
+    [4, 0, 6],
+    [7, 5, 8]
 ]
 
 
 def uniform_cost_search():
-
-    solution = []
 
     first_node = Node(initial_state)
 
@@ -149,38 +143,33 @@ def uniform_cost_search():
 
     closed_nodes = set()
 
-    closed_nodes.add(first_node)
-
-    first_node.get_node_sons()
-
-    to_append_list = []
-
-    for son in first_node.sons:
-        for o_node in open_nodes:
-            if son != o_node:
-                to_append_list.append(son)
-
-    open_nodes.extend(to_append_list)
-    to_append_list.clear()
+    current_cost = first_node.cost
 
     while open_nodes:
 
-        current_node = open_nodes.pop()
+        open_nodes.sort(key=lambda node: node.cost)
+        current_node = open_nodes.pop(0)
         closed_nodes.add(current_node)
-        solution.append(current_node)
-
-        print(current_node)
 
         if current_node.state == final_state:
-            print('We mande it!')
-            return solution
+            print('\nWe made it!')
+            print(f'Visited nodes: {len(closed_nodes)}')
+            print(f'Path size: {current_node.cost}')
+            break
 
+        if current_node.cost > current_cost:
+            current_cost = current_node.cost
+            print(f'Current cost: {current_cost}')
+
+        current_node.get_node_sons()
         sons = current_node.sons
 
         for son in sons:
             for visited in closed_nodes:
-                if son != visited:
-                    open_nodes.append(son)
+                if son.state == visited.state:
+                    break
+            else:
+                open_nodes.append(son)
 
 
 def a_star():
