@@ -23,6 +23,9 @@ class Node:
         str_repr += '-----\n'
         return str_repr
 
+    def __ne__(self, other):
+        return self.state != other.state
+
     def get_node_sons(self):
         current_node = self.state
 
@@ -123,7 +126,7 @@ def distance_between(current_node, son):
 final_state = [
    #  Column
    # 0  1  2
-    [1, 3, 3],  # Line 0
+    [1, 2, 3],  # Line 0
     [6, 5, 4],  # Line 1
     [7, 8, 0]   # Line 2
 ]
@@ -133,6 +136,51 @@ initial_state = [
     [8, 0, 7],
     [1, 4, 6]
 ]
+
+
+def uniform_cost_search():
+
+    solution = []
+
+    first_node = Node(initial_state)
+
+    open_nodes = []
+    open_nodes.append(first_node)
+
+    closed_nodes = set()
+
+    closed_nodes.add(first_node)
+
+    first_node.get_node_sons()
+
+    to_append_list = []
+
+    for son in first_node.sons:
+        for o_node in open_nodes:
+            if son != o_node:
+                to_append_list.append(son)
+
+    open_nodes.extend(to_append_list)
+    to_append_list.clear()
+
+    while open_nodes:
+
+        current_node = open_nodes.pop()
+        closed_nodes.add(current_node)
+        solution.append(current_node)
+
+        print(current_node)
+
+        if current_node.state == final_state:
+            print('We mande it!')
+            return solution
+
+        sons = current_node.sons
+
+        for son in sons:
+            for visited in closed_nodes:
+                if son != visited:
+                    open_nodes.append(son)
 
 
 def a_star():
