@@ -1,5 +1,5 @@
 """
-PYthon A* implementation
+Python A* implementation
 
 Antonio Gomes and Eduardo Binotto
 """
@@ -28,8 +28,8 @@ class Node:
     """
     Represents a state of the board
 
-    Also stores de cost associated for reaching that state, and the imediate node
-    that led to that state
+    Also stores de cost associated for reaching that state,
+    and the immediate node that led to that state
     """
 
     def __init__(self, state, cost=0, father=None):
@@ -74,8 +74,7 @@ class Node:
     @property
     def simple_heuristics(self):
         """
-        Calculate hoy many numbers in the state
-        are different from the goal state
+        Calculate hoy many numbers in the state are different from the goal state
         :return: wrong number units
         """
 
@@ -94,8 +93,7 @@ class Node:
     @property
     def wrong_columns_and_lines(self):
         """
-        Iterates over board lines and columns to find
-        misplaced numbers
+        Iterates over board lines and columns to find misplaced numbers
 
         :return: How many numbers have wrong columns +
                  how many numbers have wrong lines
