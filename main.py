@@ -6,8 +6,22 @@ Antonio Gomes and Eduardo Binotto
 
 import sys
 import copy
-import multiprocessing
 import time
+
+
+def timeit(method):
+    """
+    Measures any method execution time
+    """
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
+
+        print(f'Execution time: {round((te - ts), 2)} seconds')
+        return result
+
+    return timed
 
 
 class Node:
@@ -244,21 +258,6 @@ initial_state = [
 ]
 
 
-def timeit(method):
-    """
-    Measures any method execution time
-    """
-    def timed(*args, **kw):
-        ts = time.time()
-        result = method(*args, **kw)
-        te = time.time()
-
-        print(f'Execution time: {round((te - ts), 2)} seconds')
-        return result
-
-    return timed
-
-
 def loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
     """
     Main algorithm loop
@@ -341,6 +340,10 @@ def a_star(mode=None):
         print('Considering path cost and number of wrong tiles by lines and columns')
         f = get_lines_heuristic
 
+    else:
+        print('Wrong strategy input. Exiting')
+        return
+
     first_node = Node(initial_state)
     current_cost = first_node.cost
 
@@ -367,4 +370,4 @@ if __name__ == '__main__':
     if len(sys.argv) > 1:
         strategy = sys.argv[1]
 
-    path = a_star(strategy)
+    shortest_path = a_star(strategy)
