@@ -79,13 +79,20 @@ class Node:
 
     @property
     def wrong_columns_and_lines(self):
+        """
+        Iterates over board lines and columns to find
+        misplaced numbers
+
+        :return: How many numbers have wrong columns +
+                 how many numbers have wrong lines
+        """
 
         wrong_numbers = 0
 
-        # Create a copy of the state for the transpose operation
+        # Create a shallow copy of the state for the transpose operation
         state = copy.deepcopy(self.state)
 
-        # Flip lines and columns
+        # Flip lines and columns (matrix transpose)
         t_state = zip(*state)
 
         for n in range(1, 9):
@@ -203,6 +210,10 @@ def build_path(last_node):
     while last_node:
         path.insert(0, last_node)
         last_node = last_node.father
+
+    for move in path:
+        print(move)
+
     return path
 
 
@@ -234,23 +245,33 @@ initial_state = [
 
 
 def timeit(method):
+    """
+    Measures any method execution time
+    """
     def timed(*args, **kw):
         ts = time.time()
         result = method(*args, **kw)
         te = time.time()
 
-        print(f'Execution time: {int((te - ts) * 1000)} seconds')
+        print(f'Execution time: {round((te - ts), 2)} seconds')
         return result
 
     return timed
 
 
-def parallel_loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
-    with multiprocessing.Pool() as pool:
-        pool.apply(loop, args=(open_nodes, closed_nodes, frontier_length, current_cost, f))
-
-
 def loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
+    """
+    Main algorithm loop
+
+    Iterates over the frontier util it finds a path to the final state
+
+    :param open_nodes:
+    :param closed_nodes:
+    :param frontier_length:
+    :param current_cost:
+    :param f:
+    :return: list of nodes from the initial to the final state
+    """
 
     while open_nodes:
 
@@ -266,18 +287,21 @@ def loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
         current_node = open_nodes.pop(0)
         closed_nodes.add(current_node)
 
-        if current_node.state == final_state:
-            print('\nWe made it!')
-            print(f'Visited nodes: {len(closed_nodes)}')
-            print(f'Frontier length: {frontier_length}')
-            print(f'Path size: {current_node.cost} ')
-
-            return build_path(current_node)
-
         if current_node.cost > current_cost:
             # Just for debugging
             current_cost = current_node.cost
             print(f'Current cost: {current_cost}')
+
+        if current_node.state == final_state:
+            print('\nWe made it!')
+
+            moves = build_path(current_node)
+
+            print(f'Visited nodes: {len(closed_nodes)}')
+            print(f'Frontier length: {frontier_length}')
+            print(f'Path size: {current_node.cost} ')
+
+            return moves
 
         # This nested loops checks if the son of the
         # current node is already in the closed nodes list.
@@ -334,9 +358,13 @@ def a_star(mode=None):
     # and unrepeated peaces of data (our nodes)
     closed_nodes = set()
 
-    return parallel_loop(open_nodes, closed_nodes, frontier_length, current_cost, f)
+    return loop(open_nodes, closed_nodes, frontier_length, current_cost, f)
 
 
 if __name__ == '__main__':
 
-    a_star(sys.argv[1])
+    strategy = None
+    if len(sys.argv) > 1:
+        strategy = sys.argv[1]
+
+    path = a_star(strategy)
