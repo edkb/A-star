@@ -69,7 +69,7 @@ class Node:
         Returns the cost to the node +
         how many numbers are wring in columns and lines
         """
-        return self.cost + self.simple_heuristics + self.wrong_columns_and_lines
+        return self.cost + self.wrong_columns_and_lines
 
     @property
     def simple_heuristics(self):
@@ -101,21 +101,34 @@ class Node:
 
         wrong_numbers = 0
 
-        # Create a shallow copy of the state for the transpose operation
+        # Create a copy of the state for the transpose operation
         state = copy.deepcopy(self.state)
 
         # Flip lines and columns (matrix transpose)
-        t_state = zip(*state)
+        t_state = list(zip(*state))
 
         for n in range(1, 9):
 
-            for line, column in zip(self.state, t_state):
+            for line_number, line in enumerate(self.state):
+                for column_number, number in enumerate(line):
 
-                if n not in line:
-                    wrong_numbers += 1
+                    correct_number = final_state[line_number][column_number]
 
-                if n not in column:
+                    if correct_number == n:
+                        l_n = line_number
+                        c_n = column_number
+                        break
+
+            for li, line in enumerate(self.state):
+                if l_n == li and n not in line:
                     wrong_numbers += 1
+                    break
+
+            for ci, column in enumerate(t_state):
+
+                if c_n == ci and n not in column:
+                    wrong_numbers += 1
+                    break
 
         return wrong_numbers
 
