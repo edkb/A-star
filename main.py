@@ -4,19 +4,31 @@ PYthon A* implementation
 Antonio Gomes and Eduardo Binotto
 """
 
+import sys
 import copy
+import multiprocessing
+import time
 
 
 class Node:
+    """
+    Represents a state of the board
+
+    Also stores de cost associated for reaching that state, and the imediate node
+    that led to that state
+    """
 
     def __init__(self, state, cost=0, father=None):
 
-        self.state = state
+        self._state = state
         self.cost = cost
-        self.sons = []
         self.father = father
 
     def __str__(self):
+        """
+        Prettily prints state to the console
+        :return: string representation of the state
+        """
         str_repr = '-----\n'
         for line in self.state:
             for column in line:
@@ -26,10 +38,32 @@ class Node:
         return str_repr
 
     @property
-    def f1(self):
-        return self.cost + self.get_simple_heuristics()
+    def state(self):
+        return self._state
 
-    def get_simple_heuristics(self):
+    @property
+    def f1(self):
+        """
+        Returns the cost to the node +
+        the value of the simple heuristic strategy
+        """
+        return self.cost + self.simple_heuristics
+
+    @property
+    def f2(self):
+        """
+        Returns the cost to the node +
+        how many numbers are wring in columns and lines
+        """
+        return self.cost + self.simple_heuristics + self.wrong_columns_and_lines
+
+    @property
+    def simple_heuristics(self):
+        """
+        Calculate hoy many numbers in the state
+        are different from the goal state
+        :return: wrong number units
+        """
 
         wrong_numbers = 0
 
@@ -43,7 +77,35 @@ class Node:
 
         return wrong_numbers
 
-    def get_node_sons(self):
+    @property
+    def wrong_columns_and_lines(self):
+
+        wrong_numbers = 0
+
+        # Create a copy of the state for the transpose operation
+        state = copy.deepcopy(self.state)
+
+        # Flip lines and columns
+        t_state = zip(*state)
+
+        for n in range(1, 9):
+
+            for line, column in zip(self.state, t_state):
+
+                if n not in line:
+                    wrong_numbers += 1
+
+                if n not in column:
+                    wrong_numbers += 1
+
+        return wrong_numbers
+
+    @property
+    def best_heuristics(self):
+        return None
+
+    @property
+    def sons(self):
 
         sons = []
 
@@ -152,6 +214,10 @@ def get_heuristic(current_node):
     return current_node.f1
 
 
+def get_lines_heuristic(current_node):
+    return current_node.f2
+
+
 final_state = [
    #  Column
    # 0  1  2
@@ -161,46 +227,35 @@ final_state = [
 ]
 
 initial_state = [
-    [1, 2, 3],
-    [4, 0, 6],
-    [7, 5, 8]
+    [5, 6, 8],
+    [3, 0, 1],
+    [4, 2, 7]
 ]
 
 
-def a_star(mode='C'):
-    """
-    Main search algorithm
+def timeit(method):
+    def timed(*args, **kw):
+        ts = time.time()
+        result = method(*args, **kw)
+        te = time.time()
 
-    Finds the best possible path between any
-    initial board state and the final state
+        print(f'Execution time: {int((te - ts) * 1000)} seconds')
+        return result
 
-    :param mode: Define the sorting strategy
-    :return: list of nodes containing board states
-    """
+    return timed
 
-    # By default we use just the cost
-    # as our sorting strategy
-    f = get_cost
 
-    if mode == 'F1':
-        f = get_heuristic
+def parallel_loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
+    with multiprocessing.Pool() as pool:
+        pool.apply(loop, args=(open_nodes, closed_nodes, frontier_length, current_cost, f))
 
-    first_node = Node(initial_state)
-    current_cost = first_node.cost
 
-    # The python data type list is used to store
-    # the open nodes because we need to rely on the
-    # cost and heuristic values to get the most
-    # promising results and lists are easy to store
-    # and sort data in this way
-    open_nodes = [first_node]
-
-    # The set data structure is used because
-    # its a lightweight way to store unordered
-    # and unrepeated peaces of data (our nodes)
-    closed_nodes = set()
+def loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
 
     while open_nodes:
+
+        if len(open_nodes) > frontier_length:
+            frontier_length = len(open_nodes)
 
         # Sorts the open nodes list by node cost
         # with the lowest cost first
@@ -214,6 +269,7 @@ def a_star(mode='C'):
         if current_node.state == final_state:
             print('\nWe made it!')
             print(f'Visited nodes: {len(closed_nodes)}')
+            print(f'Frontier length: {frontier_length}')
             print(f'Path size: {current_node.cost} ')
 
             return build_path(current_node)
@@ -223,12 +279,10 @@ def a_star(mode='C'):
             current_cost = current_node.cost
             print(f'Current cost: {current_cost}')
 
-        sons = current_node.get_node_sons()
-
         # This nested loops checks if the son of the
         # current node is already in the closed nodes list.
         # If doesn't, add it to the open nodes list
-        for son in sons:
+        for son in current_node.sons:
             for visited in closed_nodes:
                 if son.state == visited.state:
                     break
@@ -236,8 +290,53 @@ def a_star(mode='C'):
                 open_nodes.append(son)
 
 
+@timeit
+def a_star(mode=None):
+    """
+    Main search algorithm
+
+    Finds the best possible path between any
+    initial board state and the final state
+
+    :param mode: Define the sorting strategy
+    :return: list of nodes containing board states
+    """
+
+    # By default we use just the cost
+    # as our sorting strategy
+
+    if not mode:
+        f = get_cost
+        print('Considering just path cost')
+
+    elif mode == 'F1':
+        print('Considering path cost and number of wrong tiles')
+        f = get_heuristic
+
+    elif mode == 'F2':
+        print('Considering path cost and number of wrong tiles by lines and columns')
+        f = get_lines_heuristic
+
+    first_node = Node(initial_state)
+    current_cost = first_node.cost
+
+    # The python data type list is used to store
+    # the open nodes because we need to rely on the
+    # cost and heuristic values to get the most
+    # promising results and lists are easy to store
+    # and sort data in this way
+    open_nodes = [first_node]
+
+    frontier_length = len(open_nodes)
+
+    # The set data structure is used because
+    # its a lightweight way to store unordered
+    # and unrepeated peaces of data (our nodes)
+    closed_nodes = set()
+
+    return parallel_loop(open_nodes, closed_nodes, frontier_length, current_cost, f)
+
+
 if __name__ == '__main__':
 
-    uniform_cost = a_star()
-
-    simple_heuristics = a_star('F1')
+    a_star(sys.argv[1])
