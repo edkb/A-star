@@ -46,6 +46,8 @@ class Node:
         str_repr = '-----\n'
         for line in self.state:
             for column in line:
+                if column == 0:
+                    column = ' '
                 str_repr += (str(column) + ' ')
             str_repr += '\n'
         str_repr += '-----\n'
