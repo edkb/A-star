@@ -20,15 +20,29 @@ def timeit(method):
 
         print(f'Execution time: {round((te - ts), 2)} seconds')
         return result
-
     return timed
+
+
+initial_state = [
+    [5, 6, 8],
+    [3, 0, 7],
+    [4, 2, 1]
+]
+
+final_state = [
+   #  Column
+   # 0  1  2
+    [1, 2, 3],  # Line 0
+    [4, 5, 6],  # Line 1
+    [7, 8, 0]   # Line 2
+]
 
 
 class Node:
     """
     Represents a state of the board
 
-    Also stores de cost associated for reaching that state,
+    Also stores the associated cost for reaching that state,
     and the immediate node that led to that state
     """
 
@@ -63,20 +77,29 @@ class Node:
         Returns the cost to the node +
         the value of the simple heuristic strategy
         """
-        return self.cost + self.simple_heuristics
+        return self.cost + self.misplaced_tiles
 
     @property
     def f2(self):
         """
         Returns the cost to the node +
-        how many numbers are wring in columns and lines
+        how many numbers are wrong in columns and lines
         """
-        return self.cost + self.wrong_columns_and_lines
+        return self.cost + self.misplaced_columns_and_lines
 
     @property
-    def simple_heuristics(self):
+    def f3(self):
         """
-        Calculate hoy many numbers in the state are different from the goal state
+        Return the cost to the node +
+        the sum of all manhattan distances
+        """
+        return self.cost + self.manhattan_distance
+
+    @property
+    def misplaced_tiles(self):
+        """
+        Calculate hoy many numbers in the state
+        are different from the goal state
         :return: wrong number units
         """
 
@@ -93,7 +116,7 @@ class Node:
         return wrong_numbers
 
     @property
-    def wrong_columns_and_lines(self):
+    def misplaced_columns_and_lines(self):
         """
         Iterates over board lines and columns to find misplaced numbers
 
@@ -127,7 +150,6 @@ class Node:
                     break
 
             for ci, column in enumerate(t_state):
-
                 if c_n == ci and n not in column:
                     wrong_numbers += 1
                     break
@@ -135,11 +157,43 @@ class Node:
         return wrong_numbers
 
     @property
-    def best_heuristics(self):
-        return None
+    def manhattan_distance(self):
+        """
+        Calculates how many linear moves is necessary
+        for each tile to reach the goal position
+        :return: sum of all distances
+        """
+
+        total_distance = 0
+
+        for n in range(1, 9):
+
+            for line_number, line in enumerate(self.state):
+                for column_number, number in enumerate(line):
+
+                    if n == number:
+                        l1 = line_number
+                        c1 = column_number
+
+                    if n == final_state[line_number][column_number]:
+                        l2 = line_number
+                        c2 = column_number
+
+            horizontal_distance = abs(l2 - l1)
+            vertical_distance = abs(c2 - c1)
+
+            node_distance = horizontal_distance + vertical_distance
+            total_distance += node_distance
+
+        return total_distance
 
     @property
     def sons(self):
+        """
+        Iterates over the state and finds possible moves
+        for the empty square. Each possible move is a new son
+        :return: list of sons of the state
+        """
 
         sons = []
 
@@ -218,11 +272,6 @@ class Node:
                         )
         return sons
 
-    def print_sons(self):
-        for sun_number, son in enumerate(self.sons):
-            print(f'Son #{sun_number}')
-            print(son)
-
 
 def build_path(last_node):
     """
@@ -248,27 +297,16 @@ def get_cost(current_node):
     return current_node.cost
 
 
-def get_heuristic(current_node):
+def get_misplaced_tiles_heuristic(current_node):
     return current_node.f1
 
 
-def get_lines_heuristic(current_node):
+def get_misplaced_lines_and_columns_heuristic(current_node):
     return current_node.f2
 
 
-final_state = [
-   #  Column
-   # 0  1  2
-    [1, 2, 3],  # Line 0
-    [4, 5, 6],  # Line 1
-    [7, 8, 0]   # Line 2
-]
-
-initial_state = [
-    [5, 6, 8],
-    [3, 0, 1],
-    [4, 2, 7]
-]
+def get_manhattan_heuristic(current_node):
+    return current_node.f3
 
 
 def loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
@@ -276,17 +314,11 @@ def loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
     Main algorithm loop
 
     Iterates over the frontier util it finds a path to the final state
-
-    :param open_nodes:
-    :param closed_nodes:
-    :param frontier_length:
-    :param current_cost:
-    :param f:
-    :return: list of nodes from the initial to the final state
     """
 
     while open_nodes:
 
+        # Updates maximum frontier length
         if len(open_nodes) > frontier_length:
             frontier_length = len(open_nodes)
 
@@ -299,11 +331,13 @@ def loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
         current_node = open_nodes.pop(0)
         closed_nodes.add(current_node)
 
+        # This is just for debugging and see if the
+        # algorithm is really executing on each cost iteration
         if current_node.cost > current_cost:
-            # Just for debugging
             current_cost = current_node.cost
             print(f'Current cost: {current_cost}')
 
+        # Checks whether the node state is the final state
         if current_node.state == final_state:
             print('\nWe made it!')
 
@@ -317,7 +351,7 @@ def loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
 
         # This nested loops checks if the son of the
         # current node is already in the closed nodes list.
-        # If doesn't, add it to the open nodes list
+        # If it doesn't, add it to the open nodes list
         for son in current_node.sons:
             for visited in closed_nodes:
                 if son.state == visited.state:
@@ -347,11 +381,15 @@ def a_star(mode=None):
 
     elif mode == 'F1':
         print('Considering path cost and number of wrong tiles')
-        f = get_heuristic
+        f = get_misplaced_tiles_heuristic
 
     elif mode == 'F2':
         print('Considering path cost and number of wrong tiles by lines and columns')
-        f = get_lines_heuristic
+        f = get_misplaced_lines_and_columns_heuristic
+
+    elif mode == 'F3':
+        print('Considering path cost and total manhattan distance')
+        f = get_manhattan_heuristic
 
     else:
         print('Wrong strategy input. Exiting')
