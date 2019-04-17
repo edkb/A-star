@@ -1,7 +1,20 @@
 """
-Python A* implementation
+Python implementation of the A* algorithm for the 8-Puzzle board game
 
-Antonio Gomes and Eduardo Binotto
+Author: Eduardo K. Binotto
+
+To execute this script run at the command-line: $ python3 main.py [F]
+
+    To use just with uniform cost leave F blank
+
+    To use the simplest heuristic use F = F1
+
+    To use the mid-term heuristic F = F2
+
+    To use the best heuristic F = F3
+
+Requirements: Python 3.6+
+
 """
 
 import sys
@@ -18,15 +31,15 @@ def timeit(method):
         result = method(*args, **kw)
         te = time.time()
 
-        print(f'Execution time: {round((te - ts), 2)} seconds')
+        print(f'Execution time: {round((te - ts), 3)} seconds')
         return result
     return timed
 
 
 initial_state = [
     [5, 6, 8],
-    [3, 0, 7],
-    [4, 2, 1]
+    [3, 0, 1],
+    [4, 2, 7]
 ]
 
 final_state = [
@@ -57,14 +70,15 @@ class Node:
         Prettily prints state to the console
         :return: string representation of the state
         """
-        str_repr = '-----\n'
+        str_repr = '________\n'
         for line in self.state:
+            str_repr += '|'
             for column in line:
                 if column == 0:
                     column = ' '
                 str_repr += (str(column) + ' ')
-            str_repr += '\n'
-        str_repr += '-----\n'
+            str_repr += '|\n'
+        str_repr += '‾‾‾‾‾‾‾‾\n'
         return str_repr
 
     @property
@@ -282,12 +296,19 @@ def build_path(last_node):
     :return: List of nodes forming the shortest path
              from the initial node to the goal
     """
+
     path = []
+
+    # Iterates from the last node to the first one
     while last_node:
+        # Inserts in the first position
+        # in order to get the correct order
         path.insert(0, last_node)
         last_node = last_node.father
 
-    for move in path:
+    # Prints the full path solution
+    for n_move, move in enumerate(path):
+        print(f'Move #{n_move}:')
         print(move)
 
     return path
@@ -322,17 +343,17 @@ def loop(open_nodes, closed_nodes, frontier_length, current_cost, f):
         if len(open_nodes) > frontier_length:
             frontier_length = len(open_nodes)
 
-        # Sorts the open nodes list by node cost
-        # with the lowest cost first
+        # Sorts the open nodes list by node evaluation function value
+        # with the lowest first (default list.sort() behavior)
         open_nodes.sort(key=f)
 
-        # Get the lowest cost node and remove it from
-        # the open nodes list
+        # Get the lowest cost node and remove it
+        # from the open nodes list
         current_node = open_nodes.pop(0)
         closed_nodes.add(current_node)
 
-        # This is just for debugging and see if the
-        # algorithm is really executing on each cost iteration
+        # This is just for debugging and see if the algorithm
+        # is really executing by printing each cost iteration
         if current_node.cost > current_cost:
             current_cost = current_node.cost
             print(f'Current cost: {current_cost}')
@@ -374,7 +395,6 @@ def a_star(mode=None):
 
     # By default we use just the cost
     # as our sorting strategy
-
     if not mode:
         f = get_cost
         print('Considering just path cost')
@@ -416,6 +436,10 @@ def a_star(mode=None):
 
 
 if __name__ == '__main__':
+
+    if sys.version_info < (3, 7):
+        print(f"Please use python 3.6+. Your currently version is {sys.version[:3]}")
+        sys.exit()
 
     strategy = None
     if len(sys.argv) > 1:
