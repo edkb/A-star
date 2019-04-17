@@ -437,7 +437,7 @@ def a_star(mode=None):
 
 if __name__ == '__main__':
 
-    if sys.version_info < (3, 7):
+    if sys.version_info < (3, 6):
         print(f"Please use python 3.6+. Your currently version is {sys.version[:3]}")
         sys.exit()
 
